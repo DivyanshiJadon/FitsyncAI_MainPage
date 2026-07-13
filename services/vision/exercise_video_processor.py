@@ -1,8 +1,5 @@
 import os
-import cv2
-import av
 import numpy as np
-import mediapipe as mp
 import threading
 from streamlit_webrtc import VideoProcessorBase
 from mediapipe.tasks import python
@@ -17,6 +14,15 @@ from services.config.workout_config import POSE_CONNECTIONS
 
 class VideoProcessorClass(VideoProcessorBase):
     def __init__(self):
+        import cv2
+        import av
+        import mediapipe as mp
+
+
+        self.cv2 = cv2
+        self.av = av
+        self.mp = mp
+
         self._lock = threading.Lock()
         self._latest_metrics = None
         self._exercise_type = "Squats"
@@ -69,7 +75,7 @@ class VideoProcessorClass(VideoProcessorBase):
             p2 = landmarks[end_idx]
 
             if p1.visibility > 0.7 and p2.visibility > 0.7:
-                cv2.line(
+                self.cv2.line(
                     img,
                     (int(p1.x * w), int(p1.y * h)),
                     (int(p2.x * w), int(p2.y * h)),
@@ -79,7 +85,7 @@ class VideoProcessorClass(VideoProcessorBase):
         
         for lm in landmarks:
             if lm.visibility > 0.7:
-                cv2.circle(
+                self.cv2.circle(
                     img, 
                     (int(lm.x * w), int(lm.y * h)),
                     8,
@@ -88,26 +94,26 @@ class VideoProcessorClass(VideoProcessorBase):
                 )
             
     def _draw_no_pose_warnings(self, img):
-        cv2.putText(
+        self.cv2.putText(
             img,
             "NO POSE DETECTED",
             (30, 50),
-            cv2.FONT_HERSHEY_SIMPLEX,
+            self.cv2.FONT_HERSHEY_SIMPLEX,
             1,
             (0, 255, 0),
             2,
-            cv2.LINE_AA,
+            self.cv2.LINE_AA,
         )
 
-        cv2.putText(
+        self.cv2.putText(
             img,
             "PLEASE FACE THE CAMERA",
             (30, 100),
-            cv2.FONT_HERSHEY_SIMPLEX,
+            self.cv2.FONT_HERSHEY_SIMPLEX,
             1,
             (0, 255, 0),
             2,
-            cv2.LINE_AA,
+            self.cv2.LINE_AA,
         )
 
     def _draw_overlays(self, img, metrics, ex_type):
@@ -126,11 +132,11 @@ class VideoProcessorClass(VideoProcessorBase):
     def _draw_squats_overlays(self, img, metrics):
         h, _ = img.shape[:2]
 
-        cv2.putText(
+        self.cv2.putText(
             img,
             f"DEPTH: {metrics['depth_status']}",
             (20, h - 20),
-            cv2.FONT_HERSHEY_SIMPLEX,
+            self.cv2.FONT_HERSHEY_SIMPLEX,
             1,
             (0, 255, 0),
             2,
@@ -139,11 +145,11 @@ class VideoProcessorClass(VideoProcessorBase):
     def _draw_pushup_overlays(self, img, metrics):
         h, _ = img.shape[:2]
 
-        cv2.putText(
+        self.cv2.putText(
             img,
             f"BODY: {metrics['body_alignment']} | HIP: {metrics['hip_status']}",
             (20, h - 20),
-            cv2.FONT_HERSHEY_SIMPLEX,
+            self.cv2.FONT_HERSHEY_SIMPLEX,
             1,
             (0, 255, 0),
             2,
@@ -152,11 +158,11 @@ class VideoProcessorClass(VideoProcessorBase):
     def _draw_curl_overlays(self, img, metrics):
         h, _ = img.shape[:2]
 
-        cv2.putText(
+        self.cv2.putText(
             img,
             f"SWING: {metrics['swing_status']}",
             (20, h - 20),
-            cv2.FONT_HERSHEY_SIMPLEX,
+            self.cv2.FONT_HERSHEY_SIMPLEX,
             1,
             (0, 255, 0),
             2,
@@ -165,11 +171,11 @@ class VideoProcessorClass(VideoProcessorBase):
     def _draw_press_overlays(self, img, metrics):
         h, _ = img.shape[:2]
 
-        cv2.putText(
+        self.cv2.putText(
             img,
             f"EXT: {metrics['extension_status']} | BACK: {metrics['back_arch_status']}",
             (20, h - 20),
-            cv2.FONT_HERSHEY_SIMPLEX,
+            self.cv2.FONT_HERSHEY_SIMPLEX,
             1,
             (0, 255, 0),
             2,
@@ -178,11 +184,11 @@ class VideoProcessorClass(VideoProcessorBase):
     def _draw_lunge_overlays(self, img, metrics):
         h, _ = img.shape[:2]
 
-        cv2.putText(
+        self.cv2.putText(
             img,
             f"BALANCE: {metrics['balance_status']}",
             (20, h - 20),
-            cv2.FONT_HERSHEY_SIMPLEX,
+            self.cv2.FONT_HERSHEY_SIMPLEX,
             1,
             (0, 255, 0),
             2,
@@ -190,13 +196,13 @@ class VideoProcessorClass(VideoProcessorBase):
 
     def recv(self, frame):
         image = np.asarray(
-            cv2.flip(frame.to_ndarray(format="bgr24"), 1),
+            self.cv2.flip(frame.to_ndarray(format="bgr24"), 1),
             dtype=np.uint8
         )
 
-        mp_image = mp.Image(
-            image_format=mp.ImageFormat.SRGB,
-            data=cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        mp_image = self.mp.Image(
+            image_format=self.mp.ImageFormat.SRGB,
+            data=self.cv2.cvtColor(image, self.cv2.COLOR_RGB2BGR)
         )
 
         self._frame_timestamps_ms += 30
@@ -228,5 +234,5 @@ class VideoProcessorClass(VideoProcessorBase):
                 else:
                     self._latest_metrics = {"pose_detected": False}
 
-        return av.VideoFrame.from_ndarray(image, format="bgr24")
+        return self.av.VideoFrame.from_ndarray(image, format="bgr24")
     
