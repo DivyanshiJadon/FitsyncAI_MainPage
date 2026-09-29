@@ -1,8 +1,24 @@
+import os
 import sqlite3
 import streamlit as st
 from pathlib import Path
 
-_DB_PATH = str(Path(__file__).parent.parent.parent / "data.db")
+
+def _resolve_db_path() -> str:
+    home = os.getenv("HOME")
+
+    if home and os.access(home, os.W_OK):
+        return str(Path(home) / "data.db")
+
+    repo_root = Path(__file__).parent.parent.parent
+
+    if os.access(repo_root, os.W_OK):
+        return str(repo_root / "data.db")
+
+    return str(Path(os.getenv("TMPDIR", "/tmp")) / "data.db")
+
+
+_DB_PATH = _resolve_db_path()
 
 
 @st.cache_resource
